@@ -1212,13 +1212,18 @@ main(int argc, char *argv[])
       return ret;
     }
 
+    // If there is no mount point use the repoPath as the mountpoint
+    if (config.mountPoint == "" && config.repoPath != "" && !createReplica) {
+        config.mountPoint = OriFile_Basename(config.repoPath);
+        fuse_opt_add_arg(&args, config.mountPoint.c_str());
+        if(!OriFile_Exists(OriFile_Basename(config.mountPoint))) {
+            OriFile_MkDir(OriFile_Basename(config.mountPoint));
+        }
+    }
     /*
      * If there is no repo path, then check if the repository name is the 
      * mountpoint name.  Otherwise we will generate it form the clone path.
      */
-    if (config.repoPath == "" && !createReplica) {
-        config.repoPath = OriFile_Basename(config.mountPoint);
-    }
     if (config.repoPath == "" && createReplica) {
         string fsName = config.clonePath;
         fsName = fsName.substr(fsName.rfind("/") + 1);
