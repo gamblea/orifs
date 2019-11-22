@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fstream>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -200,9 +201,31 @@ OriPriv::reset()
     tmpDir = repo->getRootPath() + ORI_PATH_TMP + "fuse";
     journalFile = tmpDir + "/journal";
 
+    if (OriFile_Exists(journalFile)) {
+        if (OriFile_GetSize(journalFile) == 0) {
+            OriFile_Delete(journalFile);
+        } else {
+            ifstream fin;
+            string lastLine;
+            string tempLine;
+            fin.open(journalFile);
+            if (fin.is_open()) {
+                while (getline(fin,tempLine)) { 
+                    lastLine = std::move(tempLine);
+                }
+                fin.close();
+
+                if (lastLine.find("snapshot") != string::npos) { 
+                    cleanup();
+                }
+            }   
+        }
+    }
+
     // Check if the journal is empty then delete it
-    if (OriFile_Exists(journalFile) && (OriFile_GetSize(journalFile) == 0))
+    if (OriFile_Exists(journalFile) && (OriFile_GetSize(journalFile) == 0)) {
         OriFile_Delete(journalFile);
+    }
 
     // Attempt to delete the temporary directory if it exists
     if (OriFile_Exists(tmpDir) && OriFile_RmDir(tmpDir) != 0) {
